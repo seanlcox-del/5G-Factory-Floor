@@ -114,6 +114,106 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f0f0;font-size:13px}
   </div>
 </div>
 <script>
+// ─── Path highlighting ────────────────────────────────────────────────────────
+const nodeEls = {};   // nodeId → g element
+const edgeEls = {};   // edgeId → g element
+let selectedNode = null;
+let graphAdj = {};
+
+function buildGraph(edges) {
+  const adj = {};
+  edges.forEach(e => {
+    if (e.sid) {
+      if (!adj[e.sid]) adj[e.sid] = { out: [], in: [] };
+      adj[e.sid].out.push({ edgeId: e.id, tid: e.tid });
+    }
+    if (e.tid) {
+      if (!adj[e.tid]) adj[e.tid] = { out: [], in: [] };
+      adj[e.tid].in.push({ edgeId: e.id, sid: e.sid });
+    }
+  });
+  return adj;
+}
+
+function initGraph() {
+  graphAdj = buildGraph([...prereqEdges, ...donorEdges, ...mduEdges]);
+}
+
+function getConnectedPath(startId) {
+  const nodes = new Set([startId]);
+  const edges = new Set();
+  const allEdges = [...prereqEdges, ...donorEdges, ...mduEdges];
+
+  // BFS downstream
+  const q1 = [startId], v1 = new Set([startId]);
+  while (q1.length) {
+    const id = q1.shift();
+    (graphAdj[id]?.out || []).forEach(({ edgeId, tid }) => {
+      edges.add(edgeId);
+      if (tid && !v1.has(tid)) { v1.add(tid); nodes.add(tid); q1.push(tid); }
+    });
+  }
+  // BFS upstream
+  const q2 = [startId], v2 = new Set([startId]);
+  while (q2.length) {
+    const id = q2.shift();
+    (graphAdj[id]?.in || []).forEach(({ edgeId, sid }) => {
+      edges.add(edgeId);
+      if (sid && !v2.has(sid)) { v2.add(sid); nodes.add(sid); q2.push(sid); }
+    });
+  }
+  // Include entry edges (fp only) if their target is in the path
+  allEdges.forEach(e => { if (e.fp && e.tid && nodes.has(e.tid)) edges.add(e.id); });
+  return { nodes, edges };
+}
+
+function applyHighlight(connectedNodes, connectedEdges) {
+  Object.entries(nodeEls).forEach(([id, el]) =>
+    el.style.opacity = connectedNodes.has(id) ? '1' : '0.1');
+  Object.entries(edgeEls).forEach(([id, el]) =>
+    el.style.opacity = connectedEdges.has(id) ? '1' : '0.1');
+}
+
+function resetHighlight() {
+  Object.values(nodeEls).forEach(el => el.style.opacity = '1');
+  Object.values(edgeEls).forEach(el => el.style.opacity = '1');
+  document.querySelectorAll('.highlight-ring').forEach(el => el.remove());
+}
+
+function addHighlightRing(nodeId) {
+  const node = [...prereqNodes, ...donorNodes, ...mduNodes].find(n => n.id === nodeId);
+  if (!node || !nodeEls[nodeId]) return;
+  const svg = nodeEls[nodeId].closest('svg');
+  const ring = S('circle');
+  ring.classList.add('highlight-ring');
+  ring.setAttribute('cx', node.cx); ring.setAttribute('cy', node.cy);
+  ring.setAttribute('r', node.r + 7);
+  ring.setAttribute('fill', 'none');
+  ring.setAttribute('stroke', '#FFD700');
+  ring.setAttribute('stroke-width', '3');
+  ring.setAttribute('pointer-events', 'none');
+  svg.appendChild(ring);
+}
+
+function handleNodeClick(e, nodeId) {
+  e.stopPropagation();
+  hideTooltip();
+  if (selectedNode === nodeId) {
+    selectedNode = null;
+    resetHighlight();
+    return;
+  }
+  selectedNode = nodeId;
+  resetHighlight();
+  const { nodes, edges } = getConnectedPath(nodeId);
+  applyHighlight(nodes, edges);
+  addHighlightRing(nodeId);
+}
+
+function clearSelection() {
+  if (selectedNode) { selectedNode = null; resetHighlight(); }
+}
+
 // ─── Tooltip ──────────────────────────────────────────────────────────────────
 const ttEl = document.getElementById('tooltip');
 function showTooltip(e, node) {
@@ -304,9 +404,11 @@ function drawNode(svg, node) {
     g.appendChild(t);
   });
 
-  g.style.cursor = 'default';
+  g.style.cursor = 'pointer';
+  nodeEls[node.id] = g;
   g.addEventListener('mouseenter', e => showTooltip(e, node));
   g.addEventListener('mouseleave', hideTooltip);
+  g.addEventListener('click', e => handleNodeClick(e, node.id));
   svg.appendChild(g);
 }
 
@@ -343,6 +445,7 @@ function drawEdge(svg, edge, nmap, svgId) {
     t.textContent=edge.days; g.appendChild(t);
   }
 
+  edgeEls[edge.id] = g;
   svg.appendChild(g);
 }
 
@@ -366,6 +469,7 @@ function renderPrereqs() {
   svg.setAttribute('viewBox',`0 0 ${prereqW} ${prereqH}`);
   svg.setAttribute('width', prereqW); svg.setAttribute('height', prereqH);
   addDefs(svg, 'prereqs');
+  svg.addEventListener('click', clearSelection);
   const nm = nodeMap(prereqNodes);
   prereqEdges.forEach(e => drawEdge(svg, e, nm, 'prereqs'));
   prereqNodes.forEach(n => drawNode(svg, n));
@@ -382,6 +486,7 @@ function renderDonor() {
   svg.setAttribute('viewBox',`0 0 ${donorW} ${donorH}`);
   svg.setAttribute('width', donorW); svg.setAttribute('height', donorH);
   addDefs(svg, 'donor');
+  svg.addEventListener('click', clearSelection);
   const nm = nodeMap(donorNodes);
   donorEdges.forEach(e => drawEdge(svg, e, nm, 'donor'));
   donorNodes.forEach(n => drawNode(svg, n));
@@ -416,6 +521,7 @@ function renderMdu() {
   svg.setAttribute('viewBox',`0 0 ${mduW} ${mduH}`);
   svg.setAttribute('width', mduW); svg.setAttribute('height', mduH);
   addDefs(svg, 'mdu');
+  svg.addEventListener('click', clearSelection);
   const nm = nodeMap(mduNodes);
   mduEdges.forEach(e => drawEdge(svg, e, nm, 'mdu'));
   mduNodes.forEach(n => drawNode(svg, n));
@@ -491,6 +597,7 @@ function updateViewBy(val) {
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 function init() {
+  initGraph();
   buildFilterBar();
   renderPrereqs();
   renderConnector1();
