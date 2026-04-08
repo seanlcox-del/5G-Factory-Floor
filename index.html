@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5G Home Ready: Factory Floor</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f0f0;font-size:13px}
+#app{display:flex;flex-direction:column;min-height:100vh}
+
+/* Header */
+#header{background:#111;color:#fff;padding:10px 16px}
+#header h1{font-size:16px;font-weight:700;margin-bottom:2px}
+#header p{font-size:11px;color:#ccc}
+
+/* Stats bar */
+#stats{background:#fff;border-bottom:1px solid #ddd;padding:7px 16px;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+#stats .stat{font-size:12px;color:#333}
+#stats .stat strong{color:#111}
+#stats .spacer{flex:1}
+#stats button{background:none;border:none;color:#0070d2;font-size:12px;cursor:pointer;padding:2px 6px}
+#stats .help-btn{border:1px solid #999;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;color:#555}
+
+/* Filter bar */
+#filter-bar{background:#fff;border-bottom:1px solid #ddd;padding:6px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#filter-bar span.label{font-size:11px;color:#555;margin-right:4px}
+.team-toggle{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;border:2px solid transparent;cursor:pointer;font-size:11px;font-weight:600;color:#fff;transition:opacity .2s}
+.team-toggle.inactive{opacity:0.4}
+.team-toggle .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* Main content */
+#main{display:flex;flex-direction:column;gap:0;position:relative;padding:10px 0 10px 0}
+
+/* Legend */
+#legend{position:absolute;top:10px;right:16px;background:#fff;border:1px solid #ccc;padding:10px 12px;z-index:10;min-width:220px}
+#legend h4{font-size:11px;font-weight:700;text-decoration:underline;margin-bottom:7px}
+.legend-item{display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:11px}
+.legend-circle{width:16px;height:16px;border-radius:50%;flex-shrink:0}
+.legend-circle.major{background:#fff;border:2px solid #111}
+
+/* Sections */
+.section-row{display:flex;align-items:flex-start;padding:0 0 12px 0}
+.section-label-box{width:90px;min-width:90px;padding:8px 8px 0 16px;font-size:12px;font-weight:700;color:#222;line-height:1.4;padding-top:40px}
+.section-scroll{overflow-x:auto;flex:1}
+.section-scroll svg{display:block}
+
+/* Cross-section connector */
+.connector-row{display:flex;align-items:center;padding:0 0 0 90px;margin:-4px 0}
+.connector-row svg{display:block}
+
+/* View By bar */
+#view-by-bar{display:flex;align-items:center;gap:8px;padding:4px 16px 4px 106px;background:none}
+#view-by-bar span{font-size:11px;color:#555}
+#view-by-bar select{font-size:11px;padding:2px 6px;border:1px solid #bbb;border-radius:3px}
+
+/* Donors LTD / MDU OFS badges */
+.ltd-badge{font-size:11px;font-weight:700;color:#111}
+
+/* Tooltip */
+#tooltip{position:fixed;pointer-events:none;background:#fff;border:1px solid #ccc;border-radius:4px;padding:8px 11px;font-size:11px;font-family:'Segoe UI',Arial,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.18);z-index:9999;display:none;max-width:200px;line-height:1.5}
+#tooltip .tt-label{font-weight:700;font-size:12px;margin-bottom:3px;color:#111}
+#tooltip .tt-team{color:#555;margin-bottom:2px}
+#tooltip .tt-count{color:#111;font-weight:600}
+#tooltip .tt-major{display:inline-block;margin-top:4px;background:#111;color:#fff;font-size:9px;padding:1px 5px;border-radius:2px}
+</style>
+</head>
+<body>
+<div id="tooltip"></div>
+<div id="app">
+  <div id="header">
+    <h1>5G Home Ready: View of the Factory Floor</h1>
+    <p>How are Donor and MDU/MTU sites moving through the deployment process for 5G Home Ready?</p>
+  </div>
+  <div id="stats">
+    <div class="stat"><strong id="donor-filtered">1,178</strong> Donor Sites Filtered //<strong>3,272</strong> Total Donor Sites</div>
+    <div class="stat"><strong id="mdu-filtered">19,576</strong> MDU Sites Filtered //<strong>19,576</strong> Total MDU Sites</div>
+    <div class="spacer"></div>
+    <button onclick="alert('Learn More')">Learn More &gt;</button>
+    <div class="help-btn" onclick="alert('Help')">?</div>
+  </div>
+  <div id="filter-bar">
+    <span class="label">Filter by team:</span>
+  </div>
+  <div id="main">
+    <div id="legend">
+      <h4>Factory Floor Legend:</h4>
+      <div class="legend-item"><div class="legend-circle" style="background:#E87B72"></div> GN&amp;T: 5G Home Ready Engineering</div>
+      <div class="legend-item"><div class="legend-circle" style="background:#5BB5E8"></div> VCG: Verizon Enhanced Communities (VEC)</div>
+      <div class="legend-item"><div class="legend-circle" style="background:#5CB85C"></div> GN&amp;T: Transport / Access Engineering</div>
+      <div class="legend-item"><div class="legend-circle" style="background:#9C60B5"></div> VCG: Product Management</div>
+      <div class="legend-item"><div class="legend-circle major"></div> Major Milestone</div>
+    </div>
+    <div class="section-row">
+      <div class="section-label-box">Donor<br>Pre-Reqs</div>
+      <div class="section-scroll"><svg id="svg-prereqs"></svg></div>
+    </div>
+    <div class="connector-row"><svg id="svg-connector1"></svg></div>
+    <div class="section-row">
+      <div class="section-label-box">Donor<br>Build</div>
+      <div class="section-scroll"><svg id="svg-donor"></svg></div>
+    </div>
+    <div id="view-by-bar">
+      <span>View By</span>
+      <select id="view-by" onchange="updateViewBy(this.value)">
+        <option value="sites">Living Units</option>
+        <option value="units">Sites</option>
+      </select>
+    </div>
+    <div class="section-row">
+      <div class="section-label-box">MDU<br>Build</div>
+      <div class="section-scroll"><svg id="svg-mdu"></svg></div>
+    </div>
+  </div>
+</div>
+<script>
+// ─── Tooltip ──────────────────────────────────────────────────────────────────
+const ttEl = document.getElementById('tooltip');
+function showTooltip(e, node) {
+  const team = TEAMS.find(t => t.id === node.team);
+  const teamLabel = team ? team.label : node.team;
+  const teamColor = TEAM_COLOR[node.team] || '#999';
+  const label = node.label.replace(/\n/g, ' ');
+  let html = `<div class="tt-label">${label}</div>`;
+  html += `<div class="tt-team" style="color:${teamColor}">${teamLabel}</div>`;
+  if (node.count !== null && node.count !== undefined) {
+    html += `<div class="tt-count">Count: ${node.count.toLocaleString()}</div>`;
+  }
+  if (node.major) html += `<div class="tt-major">Major Milestone</div>`;
+  ttEl.innerHTML = html;
+  ttEl.style.display = 'block';
+  positionTooltip(e);
+}
+function positionTooltip(e) {
+  const pad = 14;
+  let x = e.clientX + pad, y = e.clientY + pad;
+  if (x + ttEl.offsetWidth > window.innerWidth - 8) x = e.clientX - ttEl.offsetWidth - pad;
+  if (y + ttEl.offsetHeight > window.innerHeight - 8) y = e.clientY - ttEl.offsetHeight - pad;
+  ttEl.style.left = x + 'px';
+  ttEl.style.top  = y + 'px';
+}
+function hideTooltip() { ttEl.style.display = 'none'; }
+document.addEventListener('mousemove', e => { if (ttEl.style.display !== 'none') positionTooltip(e); });
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+const TEAMS = [
+  { id: 'gnt-engineering', label: "GN\u0026T: 5G Home Ready Engineering", color: '#E87B72' },
+  { id: 'gnt-transport',   label: "GN\u0026T: Transport / Access Engineering", color: '#5CB85C' },
+  { id: 'vcg-vec',         label: "VCG: Verizon Enhanced Communities (VEC)", color: '#5BB5E8' },
+  { id: 'vcg-product',     label: "VCG: Product Management", color: '#9C60B5' },
+];
+const TEAM_COLOR = { 'gnt-engineering':'#E87B72','gnt-transport':'#5CB85C','vcg-vec':'#5BB5E8','vcg-product':'#9C60B5','neutral':'#999' };
+let activeTeams = new Set(TEAMS.map(t => t.id));
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+// Section 1: Donor Pre-Reqs
+// viewBox 950 x 310
+const prereqNodes = [
+  { id:'ense-proj',   label:'eNSE Migration\nProject Created', team:'gnt-transport', count:null, major:false, cx:210, cy:75,  r:28 },
+  { id:'ense-comp',   label:'eNSE Migration\nComplete',        team:'gnt-transport', count:null, major:false, cx:460, cy:75,  r:28 },
+  { id:'10g-proj',    label:'10G Capable\nProject Created',    team:'gnt-transport', count:null, major:false, cx:210, cy:210, r:28 },
+  { id:'10g-comp',    label:'10G Capable\nComplete',           team:'gnt-transport', count:null, major:false, cx:460, cy:210, r:28 },
+  { id:'transport',   label:'Transport\nPre-Reqs\nComplete',   team:'gnt-transport', count:1002, major:true,  cx:730, cy:140, r:34 },
+];
+const prereqEdges = [
+  { id:'en1', fp:{x:10,y:75},   tid:'ense-proj', count:'69',  days:'365 days', dashed:false },
+  { id:'en2', sid:'ense-proj',   tid:'ense-comp', count:'102', days:'374 days', dashed:false },
+  { id:'en3', sid:'ense-comp',   tid:'transport', count:'6',   days:'0 days',   dashed:false },
+  { id:'tg1', fp:{x:10,y:210},  tid:'10g-proj',  count:'26',  days:'246 days', dashed:false },
+  { id:'tg2', sid:'10g-proj',    tid:'10g-comp',  count:'34',  days:'1,483 days', dashed:false },
+  { id:'tg3', sid:'10g-comp',    tid:'transport', count:'117', days:'0 days',   dashed:false },
+  // 363 dashed direct to Transport
+  { id:'d363', fp:{x:10,y:280}, tid:'transport',  count:'363', days:'',        dashed:true  },
+];
+const prereqW = 950, prereqH = 310;
+
+// Section 2: Donor Build
+// viewBox 2180 x 210
+const donorNodes = [
+  { id:'mod',     label:'Mod Project\nCreated',          team:'gnt-engineering', count:0, major:false, cx:90,   cy:90, r:28 },
+  { id:'re',      label:'Real Estate\nComplete',          team:'gnt-engineering', count:5, major:false, cx:350,  cy:90, r:28 },
+  { id:'rtc',     label:'Ready to\nConstruct',            team:'gnt-engineering', count:6, major:true,  cx:610,  cy:90, r:32 },
+  { id:'cs',      label:'Construction\nStarted',          team:'gnt-engineering', count:2, major:false, cx:875,  cy:90, r:28 },
+  { id:'cc',      label:'Construction\nComplete',         team:'gnt-engineering', count:9, major:false, cx:1130, cy:90, r:28 },
+  { id:'rti',     label:'Ready to\nIntegrate',            team:'gnt-engineering', count:9, major:false, cx:1385, cy:90, r:28 },
+  { id:'aoa',     label:'Activation /\nOn-Air',           team:'gnt-engineering', count:2, major:true,  cx:1640, cy:90, r:32 },
+  { id:'cpc',     label:'Closeout Package\nComplete',     team:'gnt-engineering', count:8, major:true,  cx:1895, cy:90, r:32 },
+];
+const donorEdges = [
+  { id:'de1', sid:'mod', tid:'re',  count:'448', days:'420 days', dashed:false },
+  { id:'de2', sid:'re',  tid:'rtc', count:'74',  days:'158 days', dashed:false },
+  // prereqs feed into rtc via connector
+  { id:'de3', sid:'rtc', tid:'cs',  count:'22',  days:'29 days',  dashed:false },
+  { id:'de4', sid:'cs',  tid:'cc',  count:'46',  days:'34 days',  dashed:false },
+  { id:'de5', sid:'cc',  tid:'rti', count:'18',  days:'0 days',   dashed:false },
+  { id:'de6', sid:'rti', tid:'aoa', count:'14',  days:'',         dashed:false },
+  { id:'de7', sid:'aoa', tid:'cpc', count:'145', days:'',         dashed:false },
+];
+const donorW = 2180, donorH = 210;
+const donorSummary = { label:'Donors On-Air LTD\n514', x:2060, y:90 };
+
+// Section 3: MDU Build
+// viewBox 3750 x 280
+const mduNodes = [
+  { id:'baa-i',   label:'BAA Initiated',                       team:'vcg-vec',         count:1330,  major:false, cx:90,   cy:105, r:28 },
+  { id:'baa-e',   label:'Fully Executed\nBAA',                 team:'vcg-vec',         count:1711,  major:false, cx:330,  cy:105, r:28 },
+  { id:'ssc',     label:'Site Survey\nComplete',               team:'vcg-product',     count:4,     major:false, cx:570,  cy:105, r:28 },
+  { id:'pc',      label:'Project Created',                     team:'vcg-product',     count:2631,  major:true,  cx:810,  cy:105, r:32 },
+  { id:'rfds',    label:'Submit RFDS\nActual',                 team:'gnt-engineering', count:38,    major:false, cx:1050, cy:105, r:28 },
+  { id:'aem',     label:'A&E Milestone\nComplete',             team:'gnt-engineering', count:6347,  major:false, cx:1290, cy:105, r:28 },
+  { id:'rcm',     label:'Reg Construction\nMilestone Complete',team:'gnt-engineering', count:176,   major:false, cx:1530, cy:105, r:28 },
+  { id:'rtc-m',   label:'Ready to\nConstruct',                 team:'gnt-engineering', count:2768,  major:true,  cx:1770, cy:105, r:32 },
+  { id:'cs-m',    label:'Construction\nStarted',               team:'gnt-engineering', count:292,   major:false, cx:2015, cy:105, r:28 },
+  { id:'pcc',     label:'Physical Construction\nComplete',     team:'gnt-engineering', count:238,   major:false, cx:2255, cy:105, r:28 },
+  { id:'ccm',     label:'Construction Complete\nMilestone',    team:'gnt-engineering', count:331,   major:true,  cx:2495, cy:105, r:32 },
+  { id:'mpc',     label:'MDU Path-Create\nComplete',           team:'gnt-engineering', count:448,   major:false, cx:2740, cy:105, r:28 },
+  { id:'mofs',    label:'MDU Open\nFor Sale',                  team:'gnt-engineering', count:489,   major:true,  cx:2980, cy:105, r:32 },
+  { id:'aoa-m',   label:'Activation /\nOn-Air',                team:'gnt-engineering', count:41,    major:true,  cx:3220, cy:105, r:32 },
+  { id:'cpc-m',   label:'Closeout Package\nComplete',          team:'gnt-engineering', count:218,   major:true,  cx:3460, cy:105, r:32 },
+];
+const mduEdges = [
+  { id:'me1',  sid:'baa-i', tid:'baa-e', count:'277,331', days:'5 days',  dashed:false },
+  { id:'me2',  sid:'baa-e', tid:'ssc',   count:'59,544',  days:'27 days', dashed:false },
+  { id:'me3',  sid:'ssc',   tid:'pc',    count:'1,044',   days:'35 days', dashed:false },
+  { id:'me4',  sid:'pc',    tid:'rfds',  count:'39,745',  days:'12 days', dashed:false },
+  { id:'me5',  sid:'rfds',  tid:'aem',   count:'1,268',   days:'1 day',   dashed:false },
+  { id:'me6',  sid:'aem',   tid:'rcm',   count:'6,347',   days:'2 days',  dashed:false },
+  { id:'me7',  sid:'rcm',   tid:'rtc-m', count:'26,484',  days:'14 days', dashed:false },
+  { id:'me8',  sid:'rtc-m', tid:'cs-m',  count:'5,738',   days:'61 days', dashed:false },
+  { id:'me9',  sid:'cs-m',  tid:'pcc',   count:'3,187',   days:'21 days', dashed:false },
+  { id:'me10', sid:'pcc',   tid:'ccm',   count:'3,032',   days:'29 days', dashed:false },
+  { id:'me11', sid:'ccm',   tid:'mpc',   count:'329',     days:'65 days', dashed:false },
+  { id:'me12', sid:'mpc',   tid:'mofs',  count:'904',     days:'1 day',   dashed:false },
+  { id:'me13', sid:'mofs',  tid:'aoa-m', count:'402',     days:'8 days',  dashed:false },
+  { id:'me14', sid:'aoa-m', tid:'cpc-m', count:'6,036',   days:'98 days', dashed:false },
+  // Off-path 82,294 dashed from Project Created
+  // Off-path: fp = bottom of Project Created circle (cx=810, cy=105+32=137), tp = top of off-path bubble (810,189)
+  { id:'off',  fp:{x:810,y:137}, tp:{x:810,y:189}, count:'82,294', days:'', dashed:true },
+];
+const mduW = 3750, mduH = 280;
+
+// ─── SVG helpers ──────────────────────────────────────────────────────────────
+function S(tag){ return document.createElementNS('http://www.w3.org/2000/svg', tag) }
+
+function addDefs(svg, id) {
+  const defs = S('defs');
+  const m = S('marker');
+  m.setAttribute('id','arr-'+id);
+  m.setAttribute('markerWidth','8');
+  m.setAttribute('markerHeight','6');
+  m.setAttribute('refX','7');
+  m.setAttribute('refY','3');
+  m.setAttribute('orient','auto');
+  const poly = S('polygon');
+  poly.setAttribute('points','0 0, 8 3, 0 6');
+  poly.setAttribute('fill','#555');
+  m.appendChild(poly);
+  defs.appendChild(m);
+  svg.appendChild(defs);
+}
+
+function nodeMap(nodes){ const m={}; nodes.forEach(n=>m[n.id]=n); return m; }
+
+function drawNode(svg, node) {
+  const g = S('g');
+  g.classList.add('node');
+  g.dataset.team = node.team;
+  const color = TEAM_COLOR[node.team]||'#999';
+  const r = node.r;
+
+  const circle = S('circle');
+  circle.setAttribute('cx', node.cx);
+  circle.setAttribute('cy', node.cy);
+  circle.setAttribute('r', r);
+  circle.setAttribute('fill', color);
+  circle.setAttribute('stroke', node.major ? '#111' : 'rgba(0,0,0,0.15)');
+  circle.setAttribute('stroke-width', node.major ? '3' : '1');
+  g.appendChild(circle);
+
+  // Count inside
+  if(node.count !== null && node.count !== undefined){
+    const s = node.count.toLocaleString();
+    const fs = s.length>=6?7:s.length>=5?8:s.length>=4?10:13;
+    const t = S('text');
+    t.setAttribute('x', node.cx); t.setAttribute('y', node.cy);
+    t.setAttribute('text-anchor','middle'); t.setAttribute('dominant-baseline','central');
+    t.setAttribute('fill','white'); t.setAttribute('font-weight','bold');
+    t.setAttribute('font-size', fs); t.setAttribute('font-family','Arial,sans-serif');
+    t.textContent = s;
+    g.appendChild(t);
+  }
+
+  // Label below
+  const lines = node.label.split('\n');
+  lines.forEach((line,i) => {
+    const t = S('text');
+    t.setAttribute('x', node.cx);
+    t.setAttribute('y', node.cy + r + 11 + i*11);
+    t.setAttribute('text-anchor','middle');
+    t.setAttribute('font-size','9');
+    t.setAttribute('font-family','Arial,sans-serif');
+    t.setAttribute('fill','#222');
+    t.textContent = line;
+    g.appendChild(t);
+  });
+
+  g.style.cursor = 'default';
+  g.addEventListener('mouseenter', e => showTooltip(e, node));
+  g.addEventListener('mouseleave', hideTooltip);
+  svg.appendChild(g);
+}
+
+function drawEdge(svg, edge, nmap, svgId) {
+  const g = S('g');
+  g.classList.add('edge');
+
+  let x1,y1,x2,y2;
+  if(edge.fp){ x1=edge.fp.x; y1=edge.fp.y; }
+  else{ const s=nmap[edge.sid]; x1=s.cx+s.r; y1=s.cy; }
+
+  if(edge.tp){ x2=edge.tp.x; y2=edge.tp.y; }
+  else{ const t=nmap[edge.tid]; x2=t.cx-t.r; y2=t.cy; }
+
+  const path = S('line');
+  path.setAttribute('x1',x1); path.setAttribute('y1',y1);
+  path.setAttribute('x2',x2); path.setAttribute('y2',y2);
+  path.setAttribute('stroke','#666'); path.setAttribute('stroke-width','1.5');
+  if(edge.dashed) path.setAttribute('stroke-dasharray','6 4');
+  path.setAttribute('marker-end',`url(#arr-${svgId})`);
+  g.appendChild(path);
+
+  const mx=(x1+x2)/2, my=(y1+y2)/2;
+  if(edge.count){
+    const t=S('text'); t.setAttribute('x',mx); t.setAttribute('y',my-12);
+    t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','10');
+    t.setAttribute('font-family','Arial,sans-serif'); t.setAttribute('fill','#333');
+    t.textContent=edge.count; g.appendChild(t);
+  }
+  if(edge.days){
+    const t=S('text'); t.setAttribute('x',mx); t.setAttribute('y',my+18);
+    t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','9');
+    t.setAttribute('font-family','Arial,sans-serif'); t.setAttribute('fill','#777');
+    t.textContent=edge.days; g.appendChild(t);
+  }
+
+  svg.appendChild(g);
+}
+
+function drawText(svg, x, y, lines, opts={}) {
+  lines.forEach((line,i)=>{
+    const t = S('text');
+    t.setAttribute('x',x); t.setAttribute('y',y+i*13);
+    t.setAttribute('text-anchor', opts.anchor||'middle');
+    t.setAttribute('font-size', opts.size||11);
+    t.setAttribute('font-weight', opts.bold?'bold':'normal');
+    t.setAttribute('font-family','Arial,sans-serif');
+    t.setAttribute('fill', opts.color||'#111');
+    t.textContent = line;
+    svg.appendChild(t);
+  });
+}
+
+// ─── Section renders ──────────────────────────────────────────────────────────
+function renderPrereqs() {
+  const svg = document.getElementById('svg-prereqs');
+  svg.setAttribute('viewBox',`0 0 ${prereqW} ${prereqH}`);
+  svg.setAttribute('width', prereqW); svg.setAttribute('height', prereqH);
+  addDefs(svg, 'prereqs');
+  const nm = nodeMap(prereqNodes);
+  prereqEdges.forEach(e => drawEdge(svg, e, nm, 'prereqs'));
+  prereqNodes.forEach(n => drawNode(svg, n));
+  // Downward "363" annotation at bottom of section
+  const ann = S('text');
+  ann.setAttribute('x',730); ann.setAttribute('y',295);
+  ann.setAttribute('text-anchor','middle'); ann.setAttribute('font-size','9');
+  ann.setAttribute('fill','#888'); ann.setAttribute('font-family','Arial,sans-serif');
+  ann.textContent='↓ 363 feeds Donor Build'; svg.appendChild(ann);
+}
+
+function renderDonor() {
+  const svg = document.getElementById('svg-donor');
+  svg.setAttribute('viewBox',`0 0 ${donorW} ${donorH}`);
+  svg.setAttribute('width', donorW); svg.setAttribute('height', donorH);
+  addDefs(svg, 'donor');
+  const nm = nodeMap(donorNodes);
+  donorEdges.forEach(e => drawEdge(svg, e, nm, 'donor'));
+  donorNodes.forEach(n => drawNode(svg, n));
+
+  // "412" arrow then Donors On-Air LTD text
+  const lastNode = nm['cpc'];
+  const ax = lastNode.cx + lastNode.r;
+  const ay = lastNode.cy;
+  const line = S('line');
+  line.setAttribute('x1',ax); line.setAttribute('y1',ay);
+  line.setAttribute('x2',ax+100); line.setAttribute('y2',ay);
+  line.setAttribute('stroke','#666'); line.setAttribute('stroke-width','1.5');
+  line.setAttribute('marker-end','url(#arr-donor)');
+  svg.appendChild(line);
+  drawText(svg, ax+50, ay-12, ['412'], {size:10, color:'#333'});
+  drawText(svg, ax+130, ay-6, ['Donors On-Air LTD','514'], {anchor:'start', size:11, bold:true});
+
+  // "363 from Pre-Reqs" arrow into Ready to Construct
+  const rtc = nm['rtc'];
+  const topArr = S('line');
+  topArr.setAttribute('x1',rtc.cx); topArr.setAttribute('y1',10);
+  topArr.setAttribute('x2',rtc.cx); topArr.setAttribute('y2',rtc.cy-rtc.r);
+  topArr.setAttribute('stroke','#888'); topArr.setAttribute('stroke-width','1.5');
+  topArr.setAttribute('stroke-dasharray','6 4');
+  topArr.setAttribute('marker-end','url(#arr-donor)');
+  svg.appendChild(topArr);
+  drawText(svg, rtc.cx, 8, ['363 from Pre-Reqs'], {size:9, color:'#888'});
+}
+
+function renderMdu() {
+  const svg = document.getElementById('svg-mdu');
+  svg.setAttribute('viewBox',`0 0 ${mduW} ${mduH}`);
+  svg.setAttribute('width', mduW); svg.setAttribute('height', mduH);
+  addDefs(svg, 'mdu');
+  const nm = nodeMap(mduNodes);
+  mduEdges.forEach(e => drawEdge(svg, e, nm, 'mdu'));
+  mduNodes.forEach(n => drawNode(svg, n));
+
+  // Off-path bubble at 82,294 — draw circle at (810,215)
+  const oc = S('circle');
+  oc.setAttribute('cx',810); oc.setAttribute('cy',215); oc.setAttribute('r',26);
+  oc.setAttribute('fill',TEAM_COLOR['gnt-engineering']);
+  oc.setAttribute('stroke','rgba(0,0,0,0.15)'); oc.setAttribute('stroke-width','1');
+  svg.appendChild(oc);
+  const ot = S('text'); ot.setAttribute('x',810); ot.setAttribute('y',215);
+  ot.setAttribute('text-anchor','middle'); ot.setAttribute('dominant-baseline','central');
+  ot.setAttribute('fill','white'); ot.setAttribute('font-weight','bold');
+  ot.setAttribute('font-size','8'); ot.setAttribute('font-family','Arial,sans-serif');
+  ot.textContent='82,294'; svg.appendChild(ot);
+
+  // Summary badges
+  drawText(svg, 3550, 70, ['MDU OFS LTD','218'], {anchor:'start', size:11, bold:true});
+  drawText(svg, 3550, 100, ['Living Unit OFS LTD','7,342'], {anchor:'start', size:11, bold:true});
+}
+
+// Cross-section connector between Pre-Reqs and Donor Build
+function renderConnector1() {
+  const svg = document.getElementById('svg-connector1');
+  svg.setAttribute('viewBox','0 0 950 30');
+  svg.setAttribute('width', 950); svg.setAttribute('height', 30);
+  addDefs(svg, 'conn1');
+  const line = S('line');
+  line.setAttribute('x1',730); line.setAttribute('y1',0);
+  line.setAttribute('x2',730); line.setAttribute('y2',30);
+  line.setAttribute('stroke','#888'); line.setAttribute('stroke-width','1.5');
+  line.setAttribute('stroke-dasharray','6 4');
+  svg.appendChild(line);
+}
+
+// ─── Filter setup ─────────────────────────────────────────────────────────────
+function buildFilterBar() {
+  const bar = document.getElementById('filter-bar');
+  TEAMS.forEach(team => {
+    const btn = document.createElement('div');
+    btn.className = 'team-toggle';
+    btn.style.background = team.color;
+    btn.dataset.team = team.id;
+    btn.innerHTML = `<div class="dot" style="background:white"></div>${team.label}`;
+    btn.onclick = () => toggleTeam(team.id);
+    bar.appendChild(btn);
+  });
+}
+
+function toggleTeam(teamId) {
+  if(activeTeams.has(teamId)) activeTeams.delete(teamId);
+  else activeTeams.add(teamId);
+  updateVisibility();
+}
+
+function updateVisibility() {
+  // Update toggle button state
+  document.querySelectorAll('.team-toggle').forEach(btn => {
+    btn.classList.toggle('inactive', !activeTeams.has(btn.dataset.team));
+  });
+  // Dim nodes/edges not in active teams
+  document.querySelectorAll('.node').forEach(g => {
+    const team = g.dataset.team;
+    g.style.opacity = activeTeams.has(team) ? '1' : '0.15';
+  });
+  // For edges: dim if source/target nodes are hidden
+  // (simplified: dim all edges in inactive-only scenarios)
+}
+
+function updateViewBy(val) {
+  // Future: swap count labels between sites and living units
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+function init() {
+  buildFilterBar();
+  renderPrereqs();
+  renderConnector1();
+  renderDonor();
+  renderMdu();
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
