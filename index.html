@@ -168,15 +168,17 @@ function getConnectedPath(startId) {
 }
 
 function applyHighlight(connectedNodes, connectedEdges) {
-  Object.entries(nodeEls).forEach(([id, el]) =>
-    el.style.opacity = connectedNodes.has(id) ? '1' : '0.1');
-  Object.entries(edgeEls).forEach(([id, el]) =>
-    el.style.opacity = connectedEdges.has(id) ? '1' : '0.1');
+  Object.entries(nodeEls).forEach(([id, el]) => {
+    if (el) el.setAttribute('opacity', connectedNodes.has(id) ? '1' : '0.1');
+  });
+  Object.entries(edgeEls).forEach(([id, el]) => {
+    if (el) el.setAttribute('opacity', connectedEdges.has(id) ? '1' : '0.1');
+  });
 }
 
 function resetHighlight() {
-  Object.values(nodeEls).forEach(el => el.style.opacity = '1');
-  Object.values(edgeEls).forEach(el => el.style.opacity = '1');
+  Object.values(nodeEls).forEach(el => { if (el) el.setAttribute('opacity', '1'); });
+  Object.values(edgeEls).forEach(el => { if (el) el.setAttribute('opacity', '1'); });
   document.querySelectorAll('.highlight-ring').forEach(el => el.remove());
 }
 
@@ -375,6 +377,8 @@ function drawNode(svg, node) {
   circle.setAttribute('fill', color);
   circle.setAttribute('stroke', node.major ? '#111' : 'rgba(0,0,0,0.15)');
   circle.setAttribute('stroke-width', node.major ? '3' : '1');
+  circle.setAttribute('cursor', 'pointer');
+  circle.addEventListener('click', e => handleNodeClick(e, node.id));
   g.appendChild(circle);
 
   // Count inside
